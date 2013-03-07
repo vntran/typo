@@ -250,7 +250,7 @@ Then /^the "([^"]*)" checkbox(?: within (.*))? should not be checked$/ do |label
     end
   end
 end
- 
+
 Then /^(?:|I )should be on (.+)$/ do |page_name|
   current_path = URI.parse(current_url).path
   if current_path.respond_to? :should
@@ -264,8 +264,8 @@ Then /^(?:|I )should have the following query string:$/ do |expected_pairs|
   query = URI.parse(current_url).query
   actual_params = query ? CGI.parse(query) : {}
   expected_params = {}
-  expected_pairs.rows_hash.each_pair{|k,v| expected_params[k] = v.split(',')} 
-  
+  expected_pairs.rows_hash.each_pair{|k,v| expected_params[k] = v.split(',')}
+
   if actual_params.respond_to? :should
     actual_params.should == expected_params
   else
@@ -275,4 +275,116 @@ end
 
 Then /^show me the page$/ do
   save_and_open_page
+end
+
+Given /^I am logged in as "([^"]*)"$/ do |username|
+  visit '/accounts/login'
+  fill_in 'user_login', :with => username
+  fill_in 'user_password', :with => 'password'
+  click_button 'Login'
+  if page.respond_to? :should
+    page.should have_content('Login successful')
+  else
+    assert page.has_content?('Login successful')
+  end
+end
+
+When /^I am editing article "([^"]*)"$/ do |title|
+  article = Content.find_by_title(title)
+  visit "/admin/content/edit/#{article.id}"
+end
+
+When /^I fill in "([^"]*)" with article "([^"]*)"'s id$/ do |field, title|
+  article = Content.find_by_title(title)
+  step %Q{I fill in "#{field}" with "#{article.id}"}
+end
+
+Then /^a new article ([^ ]+) is created$/ do |variable_name|
+  article = Content.where('type = \'Article\'').order(:id).reverse_order.first
+  eval("@#{variable_name} = article")
+end
+
+When /^(.+) should contain the followings: (.*)$/ do |variable_name, contents|
+  article = eval("@#{variable_name}")
+  contents.split(/,/).each do |content|
+    content_c = content.strip().gsub(/\"(.*)\"/, '\1')
+    assert article.body.include?(content_c)
+  end
+end
+
+When /^(.+)'s author should be one of the followings: (.*)$/ do |variable_name, contents|
+  article = eval("@#{variable_name}")
+  author_list = contents.split(/,/).map do |content|
+    content.strip().gsub(/\"(.*)\"/, '\1')
+  end
+  assert author_list.include?(article.author)
+end
+
+When /^(.+) should have the following comments: (.*)$/ do |variable_name, contents|
+  article = eval("@#{variable_name}")
+  contents.split(/,/).each do |content|
+    content_c = content.strip().gsub(/\"(.*)\"/, '\1')
+    #puts "content = '#{content}' and content_c = '#{content_c}'"
+    Feedback.where("type = :type and body = :body and article_id = :article_id",
+      {:type => 'Comment', :body => content_c, :article_id => article.id}).first.nil?.should be == false
+  end
+end
+
+When /^(.+)'s title should be one of the followings: (.*)$/ do |variable_name, contents|
+  article = eval("@#{variable_name}")
+  title_list = contents.split(/,/).map do |content|
+    content.strip().gsub(/\"(.*)\"/, '\1')
+  end
+  assert title_list.include?(article.title)
+end
+
+Given /the following users exist/ do |user_table|
+  user_table.hashes.each do |user_hash|
+    user = User.find_by_login(user_hash['login'])
+    if user.nil?
+      User.create!(user_hash)
+    else
+      user.update_attributes({:password => user_hash['password'], :profile_id => user_hash['profile_id'], :state => user_hash['state']})
+    end
+  end
+end
+
+Given /the following articles exist/ do |article_table|
+  article_table.hashes.each do |article_hash|
+    article = Content.find_by_title(article_hash['title'])
+    user = User.find_by_login(article_hash['user'])
+    if article.nil?
+      Article.create!({
+          :user_id => user.id,
+          :type => 'Article',
+          :title => article_hash['title'],
+          :author => article_hash['author'],
+          :body => article_hash['body'],
+          :state => article_hash['state'] ,
+          :allow_comments => 't'
+                     })
+    else
+      article.update_attributes({
+                                    :author => article_hash['author'],
+                                    :body => article_hash['body'],
+                                    :state => article_hash['state']
+                                })
+    end
+  end
+end
+
+Given /the following comments exist/ do |comment_table|
+  comment_table.hashes.each do |comment_hash|
+    comment = Comment.find_by_body(comment_hash['comment'])
+    article = Article.find_by_title(comment_hash['article'])
+    if comment.nil?
+      comment = Comment.new({
+          :type => 'Comment',
+          :body => comment_hash['comment'],
+          :author => comment_hash['author']
+                      })
+      article.comments << comment
+      comment.save!
+    end
+  end
 end

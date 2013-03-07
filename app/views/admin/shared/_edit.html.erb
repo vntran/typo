@@ -4,3 +4,11 @@
   <%= render :partial => "form" %>
 
 <% end %>
+
+<% if form_type == 'article' and ['new', 'edit'].include?(form_action[:action]) and current_user.admin?  %>
+    <%= form_tag({:action => 'merge'}) do %>
+
+        <%= render :partial => "merge" %>
+
+    <% end %>
+<% end %>

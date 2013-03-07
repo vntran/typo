@@ -52,6 +52,45 @@ class Admin::ContentController < Admin::BaseController
     redirect_to :action => 'index'
   end
 
+  def merge
+    if !current_user.admin?
+      flash[:error] = _("Error, you are not allowed to perform this action")
+      redirect_to :action => 'index'
+      return
+    end
+
+    article_to_id = params[:merge_to].to_i
+    article_from_id = params[:merge_with].to_i
+    if article_to_id.nil? or article_from_id.nil?
+      flash[:error] = _("Parameters not specified")
+      redirect_to :action => 'index'
+      return
+    end
+
+    if article_to_id == article_from_id
+      flash[:error] = _("Two articles are the same")
+      redirect_to :action => 'edit', :id => article_to_id
+      return
+    end
+
+    article_to = Article.find_by_id(article_to_id)
+    if article_to.nil?
+      flash[:error] = _('Article not found')
+      redirect_to :action => 'index'
+      return
+    end
+
+    new_article = article_to.merge_with(article_from_id)
+    if new_article.nil?
+      flash[:error] = _('Article merging failed')
+      redirect_to :action => 'edit', :id => article_to_id
+      return
+    end
+
+    flash[:notice] = _('Article merged')
+    redirect_to :action => 'edit', :id => new_article.id
+  end
+
   def insert_editor
     editor = 'visual'
     editor = 'simple' if params[:editor].to_s == 'simple'

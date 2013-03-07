@@ -630,5 +630,48 @@ describe Article do
     end
 
   end
+
+  describe "merge_with" do
+    it "should contains the text of both previous articles" do
+      articles = create_article_and_merge
+      (articles[2].body.should include articles[0].body) and
+          (articles[2].body.should include articles[1].body)
+    end
+
+    it "should have one author" do
+      articles = create_article_and_merge
+      (articles[2].author.should be == articles[0].author) or
+          (articles[2].author.should == articles[1].author)
+    end
+
+    it "should carry comments over" do
+      articles = create_article_and_merge
+      new_comments = articles[2].comments.map {|comment| comment.body}
+      (new_comments.should include articles[0].comments[0].body) and
+          (new_comments.should include articles[0].comments[1].body) and
+          (new_comments.should include articles[1].comments[0].body)
+    end
+
+    it "should have one title" do
+      articles = create_article_and_merge
+      (articles[2].title.should be == articles[0].title) or
+          (articles[2].title.should == articles[1].title)
+    end
+
+    def create_article_and_merge
+      article1 = Factory(:article, :title => "Article 1 Title", :author => 'Article 1 Author', :body => 'Article 1 Body')
+      article1.save!
+      article2 = Factory(:article, :title => "Article 2 Title", :author => 'Article 2 Author', :body => 'Article 2 Body')
+      article2.save!
+      comment11 = Factory(:comment, :article => article1, :body => 'Comment11')
+      comment11.save!
+      comment12 = Factory(:comment, :article => article1, :body => 'Comment12')
+      comment12.save!
+      comment21 = Factory(:comment, :article => article2, :body => 'Comment21')
+      comment21.save!
+      article = article1.merge_with(article2.id)
+      return [article1, article2, article]
+    end
+  end
 end
 

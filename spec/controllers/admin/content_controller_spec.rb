@@ -670,5 +670,12 @@ describe Admin::ContentController do
       end
 
     end
+
+    describe 'merge article feature' do
+      it 'should redirect non-admin users' do
+        post :merge, 'merge_to' => Factory(:article).id, 'merge_with' => Factory(:article).id
+        response.should redirect_to(:action => 'index')
+      end
+    end
   end
 end

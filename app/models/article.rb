@@ -416,6 +416,29 @@ class Article < Content
     user.admin? || user_id == user.id
   end
 
+  def merge_with(other_article_id)
+    old_article = Article.find_by_id(other_article_id)
+    return nil if old_article.nil?
+    new_article = self.dup
+    new_article.id = nil
+    new_article.guid = nil
+    new_article.create_guid
+    new_article.body << old_article.body
+    new_article.comments.clear
+    new_article.save!
+    all_comments = [].concat(self.comments).concat(old_article.comments)
+    all_comments.each do |comment|
+      new_comment = comment.dup
+      new_comment.id = nil
+      new_comment.guid = nil
+      new_comment.create_guid
+      new_article.comments << new_comment
+      new_comment.save!
+    end
+
+    Article.find_by_id(new_article.id)
+  end
+
   protected
 
   def set_published_at
@@ -466,4 +489,6 @@ class Article < Content
     to = to - 1 # pull off 1 second so we don't overlap onto the next day
     return from..to
   end
+
+
 end
