@@ -425,7 +425,7 @@ class Article < Content
     new_article.create_guid
     new_article.body << old_article.body
     new_article.comments.clear
-    new_article.save!
+    new_article.save
     all_comments = [].concat(self.comments).concat(old_article.comments)
     all_comments.each do |comment|
       new_comment = comment.dup
@@ -433,7 +433,7 @@ class Article < Content
       new_comment.guid = nil
       new_comment.create_guid
       new_article.comments << new_comment
-      new_comment.save!
+      new_comment.save
     end
 
     Article.find_by_id(new_article.id)
