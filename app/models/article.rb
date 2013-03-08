@@ -425,6 +425,8 @@ class Article < Content
       new_comment = Comment.create!(:body => comment.body, :article => new_article, :author => comment.author)
     end
 
+    self.destroy
+    old_article.destroy
     Article.find_by_id(new_article.id)
   end
 
