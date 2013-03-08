@@ -9,8 +9,8 @@ test: &test
   timeout: 5000
 
 production:
-  adapter: sqlite3
-  database: db/db_production
+  adapter: postgresql
+  database: db_production
   timeout: 5000
 
 cucumber:
