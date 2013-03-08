@@ -419,7 +419,7 @@ class Article < Content
   def merge_with(other_article_id)
     old_article = Article.find_by_id(other_article_id)
     return nil if old_article.nil?
-    new_article = Article.create!(:author => self.author, :body => self.body + old_article.body, :title => self.title)
+    new_article = Article.create!(:author => self.author, :body => self.body + old_article.body, :title => self.title, :state => 'published')
     all_comments = [].concat(self.comments).concat(old_article.comments)
     all_comments.each do |comment|
       new_comment = Comment.create!(:body => comment.body, :article => new_article, :author => comment.author)
