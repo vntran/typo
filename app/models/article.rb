@@ -422,7 +422,7 @@ class Article < Content
     new_article = Article.create!(:author => self.author, :body => self.body + old_article.body, :title => self.title, :state => 'published')
     all_comments = [].concat(self.comments).concat(old_article.comments)
     all_comments.each do |comment|
-      new_comment = Comment.create!(:body => comment.body, :article => new_article, :author => comment.author)
+      new_comment = Comment.create!(:body => comment.body, :article => new_article, :author => comment.author, :state => 'ham')
     end
 
     self.destroy
